@@ -45,3 +45,23 @@ def sanitise_input(question, input_type, characters=None, words=None):
             if user_data in possible_answers:
                 return user_data
     return None
+
+    
+    
+class Container:
+    """
+        A container could be a list of habits, vices or goals.
+    """
+    id_count = 0
+    def __init__(self, name, items = None):
+        self.id = self.id_count
+        self.id_count += 1
+        self.list = []
+        if items:
+            self.list = items
+
+    def add(self, item):
+        self.list.append(item)
+
+    def remove(self, item):
+        self.list.remove(item)
