@@ -6,8 +6,7 @@ from .context import personaltracker
 
 ##### Function Tests
 #####
-
-@pytest.mark.parametrize("input_type, user_input, result, characters, words", [
+@pytest.mark.parametrize('input_type, user_input, result, characters, words', [
     ('number',    100,  100, None, None),    # testing correct number
     ('number', '3.44',  3.4, None, None),    # testing  float number
     ('number', '3.46',  3.5, None, None),    # testing  float number
@@ -32,18 +31,18 @@ def test_sanitise_input(input_type, user_input, result, characters, words):
         Testing the sanitise_input function which takes information from 
         the user and returns th is data if it is acceptable.
     """
+    # TODO: add capsys and check print is showing the correct information
     with mock.patch('builtins.input', return_value=user_input):
         output = personaltracker.sanitise_input('not important', input_type, characters, words)
         print('printing output: ', output)
         assert output == result
 
-### Container Class
-
+#### Container Class
 @pytest.fixture()
 def setup_container_0():
-    return personaltracker.Container("No initial items")
+    return personaltracker.Container('No initial items')
 
-@pytest.mark.parametrize("adds, removes, compare_pos, compare_val, length", [
+@pytest.mark.parametrize('adds, removes, compare_pos, compare_val, length', [
     (['first', 'second', 'third'], [], 1, 'second', 3),    # testing  adding basic items
     (['first', 'second', 'third'], ['third'], -1, 'second', 2),    # testing  adding and removing basic items
     (['first', 'second', 'third', 'second'], ['second'], 2, 'second', 3),    # testing  duplicate removal
@@ -54,6 +53,7 @@ def test_container_empty(setup_container_0, adds, removes, compare_pos, compare_
     """
         Testing adding and removing items from an empty container.
     """
+    assert setup_container_0.name == 'No initial items'
     for item in adds:
         setup_container_0.add(item)
 
@@ -68,7 +68,7 @@ def test_container_empty(setup_container_0, adds, removes, compare_pos, compare_
 
 @pytest.fixture()
 def setup_container_1():
-    return personaltracker.Container("Has initial items", ['one', 'two', 'three'])
+    return personaltracker.Container('Has initial items', ['one', 'two', 'three'])
 
 @pytest.mark.parametrize("adds, removes, compare_pos, compare_val, length", [
     (['first', 'second', 'third'], [], -2, 'second', 6),    # testing  adding basic items
@@ -81,6 +81,7 @@ def test_container_notempty(setup_container_1, adds, removes, compare_pos, compa
     """
         Testing adding and removing items from a container already containing items.
     """
+    assert setup_container_1.name == 'Has initial items'
     for item in adds:
         setup_container_1.add(item)
 
@@ -94,3 +95,45 @@ def test_container_notempty(setup_container_1, adds, removes, compare_pos, compa
     else:
         assert setup_container_1.list[compare_pos] == compare_val
         assert len(setup_container_1.list) == length
+
+#### CMDView Class
+@pytest.fixture
+def setup_view():
+    return personaltracker.CMDView()
+
+def test_action(setup_view):
+    container = personaltracker.Container('Tester')
+    answer = 'list'
+    with mock.patch('personaltracker.personaltracker.sanitise_input', return_value = answer):
+        output = setup_view.action(container)
+        assert output == answer
+
+def test_view_home(capsys, setup_view):
+    container = personaltracker.Container('Tester')
+    output = setup_view.home(container)
+    captured = capsys.readouterr()
+    assert captured.out == 'Tester!\n'
+    assert output == None
+    
+def test_view_container(capsys, setup_view):
+    # Cannot use print statement as it is automatically captured
+    # by output, can be escaped using:     with capsys.disabled():
+    items = ['This', 'is', 'a', 'sentence.']
+    output = "".join([str(item+'\n') for item in items])
+    container = personaltracker.Container('Tester', items)
+    setup_view.container(container)
+    captured = capsys.readouterr()
+    assert str(captured.out) == str(output)
+
+def test_view_questions(capsys, setup_view):
+    questions = ['One', 'two', 'three', 'four']
+    responses = ['Yes', 'No', 'Yes', 'Yes']
+    container = personaltracker.Container('Tester', questions)
+    def side_effect(arg):
+        # side_effect allows response to be succussively returned
+        return responses[arg]
+    with mock.patch('personaltracker.personaltracker.sanitise_input', 
+            side_effect=side_effect) as MockHelper:
+        MockHelper.side_effect = responses
+        output = setup_view.questions(container)
+        assert responses == output

@@ -6,9 +6,21 @@ import logging
 import os
 import re
 
+##### Globals
+#####
+PARAGRAPH={
+    'input_type': 'paragraph',
+    'characters': '[a-zA-Z .!?]',
+}
+ANSWER={
+    'input_type': 'answer',
+    'characters': '[a-zA-Z]',
+    'actions': ['list','exit','answer', 'add', 'remove', 'edit'],
+    'binary': ['yes', 'affirmative', 'no', 'negative' ]
+}
+
 ##### Functions
 #####
-
 def sanitise_input(question, input_type, characters=None, words=None):
     """
         The keyboard input is only kept if the data abides by certain
@@ -36,8 +48,9 @@ def sanitise_input(question, input_type, characters=None, words=None):
         found = re.findall(characters, user_data)
         if len(user_data) == len(found):
             return user_data
-    elif input_type is 'answer' and characters is not None and words is not None:
-        print("Hi")
+    elif input_type is 'answer' \
+            and characters is not None \
+            and words is not None:
         found = re.findall(characters, user_data)
         if len(user_data) == len(found):
             possible_answers = set([string[0] for string in words])
@@ -46,8 +59,76 @@ def sanitise_input(question, input_type, characters=None, words=None):
                 return user_data
     return None
 
+##### Classes
+#####
+class CMDView:
+    """
+        Interaction with the command line interface.
+        Consists of:
+        * printing to screen
+        * reading in user inputs
+    """
+    def action(self, container=None):
+        """ 
+            User input capture.
+        """
+        result = None
+        # TODO: Change while loop to for loop
+        while result is None:
+            result = sanitise_input(
+                "What task do you wish to perform?",
+                ANSWER['input_type'],
+                ANSWER['characters'],
+                ANSWER['actions'])
+        return result
+
+    def title(self):
+        """
+            Entry into applcation.
+        """
+        os.system('clear')
+        print('Personal Tracker!')
+
+    def home(self, container):
+        """
+            Displays the home screen of a container.
+        """
+        assert isinstance(container, Container)
+        os.system('clear')
+        print(container.name + '!')
+
+    def container(self, container):
+        """
+            Lists contents of the container
+        """
+        assert isinstance(container, Container)
+        for item in container.list:
+            print(item)
     
-    
+    def questions(self, container):
+        """
+            Ask's questions to the user with each question requiring a
+            response.
+        """
+        assert isinstance(container, Container)
+        output = []
+        result = None
+        for item in container.list:
+            # TODO: Change while loop to for loop
+            while result is None:
+                result = sanitise_input(
+                                        item, 
+                                        ANSWER['input_type'], 
+                                        ANSWER['characters'],
+                                        ANSWER['binary'])
+            output.append(result)
+            result = None
+        # debugging
+        for i in range(len(output)):
+            logging.debug("question: " + container.list[i])
+            logging.debug("answer: " + output[i])
+        return output
+
 class Container:
     """
         A container could be a list of habits, vices or goals.
@@ -55,6 +136,7 @@ class Container:
     id_count = 0
     def __init__(self, name, items = None):
         self.id = self.id_count
+        self.name = name
         self.id_count += 1
         self.list = []
         if items:
