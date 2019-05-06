@@ -68,7 +68,10 @@ def test_container_empty(setup_container_0, adds, removes, compare_pos, compare_
 
 @pytest.fixture()
 def setup_container_1():
-    return personaltracker.Container('Has initial items', ['one', 'two', 'three'])
+    return personaltracker.Container('Has initial items', 
+            [personaltracker.Item('one'), 
+            personaltracker.Item('two'), 
+            personaltracker.Item('three')])
 
 @pytest.mark.parametrize("adds, removes, compare_pos, compare_val, length", [
     (['first', 'second', 'third'], [], -2, 'second', 6),    # testing  adding basic items
@@ -101,7 +104,7 @@ def test_container_notempty(setup_container_1, adds, removes, compare_pos, compa
 def setup_view():
     return personaltracker.CMDView()
 
-def test_action(setup_view):
+def test_view_action(setup_view):
     container = personaltracker.Container('Tester')
     answer = 'list'
     with mock.patch('personaltracker.personaltracker.sanitise_input', return_value = answer):
@@ -115,18 +118,39 @@ def test_view_home(capsys, setup_view):
     assert captured.out == 'Tester!\n'
     assert output == None
     
-def test_view_container(capsys, setup_view):
+def test_view_container_list(capsys, setup_view):
     # Cannot use print statement as it is automatically captured
     # by output, can be escaped using:     with capsys.disabled():
-    items = ['This', 'is', 'a', 'sentence.']
+    items = [personaltracker.Item('This'), 
+            personaltracker.Item('is'), 
+            personaltracker.Item('a'), 
+            personaltracker.Item('sentence.')]
     output = "".join([str(item+'\n') for item in items])
+    output = 'Tester\'s found:\n' +output
     container = personaltracker.Container('Tester', items)
-    setup_view.container(container)
+    setup_view.container_list(container)
     captured = capsys.readouterr()
     assert str(captured.out) == str(output)
 
+def test_view_container_add(capsys, setup_view):
+    container = personaltracker.Container('Tester')
+    output = setup_view.container_add(container)
+    captured = capsys.readouterr()
+    assert captured.out == 'What Tester do you wish to add?\n'
+    assert output == None
+
+def test_view_container_remove(capsys, setup_view):
+    container = personaltracker.Container('Tester')
+    output = setup_view.container_remove(container)
+    captured = capsys.readouterr()
+    assert captured.out == 'What Tester do you wish to remove?\n'
+    assert output == None
+
 def test_view_questions(capsys, setup_view):
-    questions = ['One', 'two', 'three', 'four']
+    questions = [personaltracker.Item('One'), 
+                personaltracker.Item('two'), 
+                personaltracker.Item('three'), 
+                personaltracker.Item('four')]
     responses = ['Yes', 'No', 'Yes', 'Yes']
     container = personaltracker.Container('Tester', questions)
     def side_effect(arg):
